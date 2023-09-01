@@ -1,26 +1,83 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentRepository } from './student.repository';
+import { StudentEntity } from './entities/student.entity';
 
 @Injectable()
 export class StudentService {
-  create(createStudentDto: CreateStudentDto) {
-    return 'This action adds a new student';
+
+  constructor(
+    private readonly repository: StudentRepository
+  ) { }
+
+  async create(createStudentDto: CreateStudentDto): Promise<any | Error> {
+    const data = await this.repository.createEntity(createStudentDto);
+    if (!data) {
+      throw new HttpException(
+        'CREATE_FAILED',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    return {
+      statusCode: 201,
+      message: "Data Created Successfully!",
+      data: data
+    }
   }
 
-  findAll() {
-    return `This action returns all student`;
+  async findAll() {
+    const data = await this.repository.findByFilterQuery({});
+    if (!data) {
+      throw new NotFoundException();
+    }
+    return {
+      statusCode: 200,
+      message: "Data Fetched Successfully!",
+      data: data
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} student`;
+  async findOne(id: string) {
+    const data = await this.repository.findByFilterQuery({ id: id });
+    if (!data) {
+      throw new NotFoundException();
+    }
+    return {
+      statusCode: 200,
+      message: "Single Data Fetched Successfully!",
+      data: data
+    }
   }
 
-  update(id: number, updateStudentDto: UpdateStudentDto) {
-    return `This action updates a #${id} student`;
+  async update(id: string, updateStudentDto: UpdateStudentDto) {
+    const findSingleData: any = await this.repository.findOneEntity(id);
+    if (!findSingleData) {
+      throw new NotFoundException();
+    }
+    const data = await this.repository.updateEntity(id, updateStudentDto);
+    if (!data) {
+      throw new HttpException(
+        'UPDATE_FAILED',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    return {
+      statusCode: 200,
+      message: "Data Updated Successfully!",
+      data: data
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} student`;
+  async remove(id: string) {
+    const data = await this.repository.deleteEntity(id);
+    if (!data) {
+      throw new NotFoundException();
+    }
+    return {
+      statusCode: 200,
+      message: "Data Deleted Successfully!",
+      data: data
+    }
   }
 }
